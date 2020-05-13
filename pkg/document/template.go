@@ -14,11 +14,19 @@ import (
 )
 
 const defaultDocumentationTemplate = `{{ template "chart.header" . }}
+{{ template "chart.deprecated" . }}
+
+{{ template "chart.version" . }}
+{{ template "chart.type" . }}
+{{ template "chart.appVersion" . }}
+
 {{ template "chart.description" . }}
 
-{{ template "chart.versionLine" . }}
+{{ template "chart.homepage" . }}
 
-{{ template "chart.sourceLinkLine" . }}
+{{ template "chart.maintainer" . }}
+
+{{ template "chart.sources" . }}
 
 {{ template "chart.requirementsSection" . }}
 
@@ -28,11 +36,46 @@ const defaultDocumentationTemplate = `{{ template "chart.header" . }}
 func getHeaderTemplate() string {
 	headerTemplateBuilder := strings.Builder{}
 	headerTemplateBuilder.WriteString(`{{ define "chart.header" }}`)
-	headerTemplateBuilder.WriteString("{{ .Name }}\n")
-	headerTemplateBuilder.WriteString(`{{ repeat (len .Name) "=" }}`)
+	headerTemplateBuilder.WriteString("# {{ .Name }}\n")
 	headerTemplateBuilder.WriteString("{{ end }}")
 
 	return headerTemplateBuilder.String()
+}
+
+func getDeprecatedTemplate() string {
+	deprecatedTemplateBuilder := strings.Builder{}
+	deprecatedTemplateBuilder.WriteString(`{{ define "chart.deprecated" }}`)
+	deprecatedTemplateBuilder.WriteString("{{ if .Deprecated }}> **:exclamation: This Helm Chart is deprecated!**{{ end }}")
+	deprecatedTemplateBuilder.WriteString("{{ end }}")
+
+	return deprecatedTemplateBuilder.String()
+}
+
+func getVersionTemplate() string {
+	versionBuilder := strings.Builder{}
+	versionBuilder.WriteString(`{{ define "chart.version" }}`)
+	versionBuilder.WriteString("![Version: {{ .Version }}](https://img.shields.io/badge/Version-{{ .Version }}-informational?style=flat-square)")
+	versionBuilder.WriteString("{{ end }}")
+
+	return versionBuilder.String()
+}
+
+func getTypeTemplate() string {
+	typeBuilder := strings.Builder{}
+	typeBuilder.WriteString(`{{ define "chart.type" }}`)
+	typeBuilder.WriteString("{{ if .Type }}![Type: {{ .Type }}](https://img.shields.io/badge/Type-{{ .Type }}-informational?style=flat-square){{ end }}")
+	typeBuilder.WriteString("{{ end }}")
+
+	return typeBuilder.String()
+}
+
+func getAppVersionTemplate() string {
+	appVersionBuilder := strings.Builder{}
+	appVersionBuilder.WriteString(`{{ define "chart.appVersion" }}`)
+	appVersionBuilder.WriteString("{{ if .AppVersion }}![AppVersion: {{ .AppVersion }}](https://img.shields.io/badge/AppVersion-{{ .AppVersion }}-informational?style=flat-square){{ end }}")
+	appVersionBuilder.WriteString("{{ end }}")
+
+	return appVersionBuilder.String()
 }
 
 func getDescriptionTemplate() string {
@@ -44,34 +87,50 @@ func getDescriptionTemplate() string {
 	return descriptionBuilder.String()
 }
 
-func getTypeTemplate() string {
-	typeBuilder := strings.Builder{}
-	typeBuilder.WriteString(`{{ define "chart.type" }}{{ .Type }}{{ end }}\n`)
-	typeBuilder.WriteString(`{{ define "chart.typeLine" }}`)
-	typeBuilder.WriteString("Current chart type is `{{ .Type }}`")
-	typeBuilder.WriteString("{{ end }}")
+func getHomepageTemplate() string {
+	homepageBuilder := strings.Builder{}
+	homepageBuilder.WriteString(`{{ define "chart.homepage" }}`)
+	homepageBuilder.WriteString("{{ if .Home }}**Homepage:** <{{ .Home }}>{{ end }}")
+	homepageBuilder.WriteString("{{ end }}")
 
-	return typeBuilder.String()
+	return homepageBuilder.String()
 }
 
-func getVersionTemplates() string {
-	versionBuilder := strings.Builder{}
-	versionBuilder.WriteString(`{{ define "chart.version" }}{{ .Version }}{{ end }}\n`)
-	versionBuilder.WriteString(`{{ define "chart.versionLine" }}`)
-	versionBuilder.WriteString("Current chart version is `{{ .Version }}`")
-	versionBuilder.WriteString("{{ end }}")
+func getMaintainerTemplate() string {
+	maintainerBuilder := strings.Builder{}
+	maintainerBuilder.WriteString(`{{ define "chart.maintainerHeader" }}## Maintainer{{ end }}`)
 
-	return versionBuilder.String()
+	maintainerBuilder.WriteString(`{{ define "chart.maintainerTable" }}`)
+	maintainerBuilder.WriteString("| Maintainer | E-Mail | URL |\n")
+	maintainerBuilder.WriteString("| ---------- | ------ | --- |\n")
+	maintainerBuilder.WriteString("  {{- range .Maintainer }}")
+	maintainerBuilder.WriteString("\n| {{ .Name }} | {{ .Email }} | {{ .Url }} |")
+	maintainerBuilder.WriteString("  {{- end }}")
+	maintainerBuilder.WriteString("{{ end }}")
+
+	maintainerBuilder.WriteString(`{{ define "chart.maintainer" }}`)
+	maintainerBuilder.WriteString("{{ if .Maintainer }}")
+	maintainerBuilder.WriteString(`{{ template "chart.maintainerHeader . }}`)
+	maintainerBuilder.WriteString("\n\n")
+	maintainerBuilder.WriteString(`{{ template "chart.maintainerTable" . }}`)
+	maintainerBuilder.WriteString("{{ end }}")
+	maintainerBuilder.WriteString("{{ end }}")
+
+	return maintainerBuilder.String()
 }
 
 func getSourceLinkTemplates() string {
 	sourceLinkBuilder := strings.Builder{}
-	sourceLinkBuilder.WriteString(`{{ define "chart.sourceLink" }}`)
-	sourceLinkBuilder.WriteString("{{ .Home }}")
-	sourceLinkBuilder.WriteString("{{ end }}\n")
+	sourceLinkBuilder.WriteString(`{{ define "chart.sourceHeader" }}## Source Code{{ end}}`)
 
-	sourceLinkBuilder.WriteString(`{{ define "chart.sourceLinkLine" }}`)
-	sourceLinkBuilder.WriteString("{{ if .Home }}Source code can be found [here]({{ .Home }}){{ end }}")
+	sourceLinkBuilder.WriteString(`{{ define "chart.sources" }}`)
+	sourceLinkBuilder.WriteString("{{ if .Sources }}")
+	sourceLinkBuilder.WriteString(`{{ template "chart.sourceHeader" . }}`)
+	sourceLinkBuilder.WriteString("\n\n")
+	sourceLinkBuilder.WriteString("  {{- range .Sources }}")
+	sourceLinkBuilder.WriteString("* <{{ . }}>\n")
+	sourceLinkBuilder.WriteString("  {{- end }}")
+	sourceLinkBuilder.WriteString("{{ end }}")
 	sourceLinkBuilder.WriteString("{{ end }}")
 
 	return sourceLinkBuilder.String()
@@ -79,20 +138,28 @@ func getSourceLinkTemplates() string {
 
 func getRequirementsTableTemplates() string {
 	requirementsSectionBuilder := strings.Builder{}
-	requirementsSectionBuilder.WriteString(`{{ define "chart.requirementsHeader" }}## Chart Requirements{{ end }}`)
+	requirementsSectionBuilder.WriteString(`{{ define "chart.requirementsHeader" }}## Requirements{{ end }}`)
+
+	requirementsSectionBuilder.WriteString(`{{ define "chart.kubeversion" }}`)
+	requirementsSectionBuilder.WriteString("{{ if .KubeVersion }}Kubernetes: `{{ .KubeVersion }}`\n\n{{ end }}")
+	requirementsSectionBuilder.WriteString("{{ end }}")
 
 	requirementsSectionBuilder.WriteString(`{{ define "chart.requirementsTable" }}`)
 	requirementsSectionBuilder.WriteString("| Repository | Name | Version |\n")
 	requirementsSectionBuilder.WriteString("|------------|------|---------|\n")
 	requirementsSectionBuilder.WriteString("  {{- range .Dependencies }}")
-	requirementsSectionBuilder.WriteString("\n| {{ .Repository }} | {{ .Name }} | {{ .Version }} |")
+	requirementsSectionBuilder.WriteString("\n| {{ .Repository }} | {{ .Name }} | `{{ .Version }}` |")
 	requirementsSectionBuilder.WriteString("  {{- end }}")
 	requirementsSectionBuilder.WriteString("{{ end }}")
 
 	requirementsSectionBuilder.WriteString(`{{ define "chart.requirementsSection" }}`)
-	requirementsSectionBuilder.WriteString("{{ if .Dependencies }}")
+	requirementsSectionBuilder.WriteString("{{ if or .Dependencies .KubeVersion }}")
 	requirementsSectionBuilder.WriteString(`{{ template "chart.requirementsHeader" . }}`)
 	requirementsSectionBuilder.WriteString("\n\n")
+	requirementsSectionBuilder.WriteString("{{ if .KubeVersion }}")
+	requirementsSectionBuilder.WriteString(`{{ template "chart.kubeversion" . }}`)
+	requirementsSectionBuilder.WriteString("{{ end }}")
+	requirementsSectionBuilder.WriteString("{{ if .Dependencies }}")
 	requirementsSectionBuilder.WriteString(`{{ template "chart.requirementsTable" . }}`)
 	requirementsSectionBuilder.WriteString("{{ end }}")
 	requirementsSectionBuilder.WriteString("{{ end }}")
@@ -151,9 +218,13 @@ func getDocumentationTemplates(chartDirectory string) ([]string, error) {
 
 	return []string{
 		getHeaderTemplate(),
-		getDescriptionTemplate(),
-		getVersionTemplates(),
+		getDeprecatedTemplate(),
+		getVersionTemplate(),
 		getTypeTemplate(),
+		getAppVersionTemplate(),
+		getDescriptionTemplate(),
+		getHomepageTemplate(),
+		getMaintainerTemplate(),
 		getSourceLinkTemplates(),
 		getRequirementsTableTemplates(),
 		getValuesTableTemplates(),
