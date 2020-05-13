@@ -14,19 +14,19 @@ import (
 )
 
 const defaultDocumentationTemplate = `{{ template "chart.header" . }}
-{{ template "chart.deprecated" . }}
+{{ template "chart.deprecationWarning" . }}
 
-{{ template "chart.version" . }}
-{{ template "chart.type" . }}
-{{ template "chart.appVersion" . }}
+{{ template "chart.versionBadge" . }}
+{{ template "chart.typeBadge" . }}
+{{ template "chart.appVersionBadge" . }}
 
 {{ template "chart.description" . }}
 
 {{ template "chart.homepage" . }}
 
-{{ template "chart.maintainer" . }}
+{{ template "chart.maintainersSection" . }}
 
-{{ template "chart.sources" . }}
+{{ template "chart.sourcesSection" . }}
 
 {{ template "chart.requirementsSection" . }}
 
@@ -36,7 +36,7 @@ const defaultDocumentationTemplate = `{{ template "chart.header" . }}
 func getHeaderTemplate() string {
 	headerTemplateBuilder := strings.Builder{}
 	headerTemplateBuilder.WriteString(`{{ define "chart.header" }}`)
-	headerTemplateBuilder.WriteString("# {{ .Name }}\n")
+	headerTemplateBuilder.WriteString("# {{ .Name }}\n\n")
 	headerTemplateBuilder.WriteString("{{ end }}")
 
 	return headerTemplateBuilder.String()
@@ -44,7 +44,7 @@ func getHeaderTemplate() string {
 
 func getDeprecatedTemplate() string {
 	deprecatedTemplateBuilder := strings.Builder{}
-	deprecatedTemplateBuilder.WriteString(`{{ define "chart.deprecated" }}`)
+	deprecatedTemplateBuilder.WriteString(`{{ define "chart.deprecationWarning" }}`)
 	deprecatedTemplateBuilder.WriteString("{{ if .Deprecated }}> **:exclamation: This Helm Chart is deprecated!**{{ end }}")
 	deprecatedTemplateBuilder.WriteString("{{ end }}")
 
@@ -53,7 +53,7 @@ func getDeprecatedTemplate() string {
 
 func getVersionTemplate() string {
 	versionBuilder := strings.Builder{}
-	versionBuilder.WriteString(`{{ define "chart.version" }}`)
+	versionBuilder.WriteString(`{{ define "chart.versionBadge" }}`)
 	versionBuilder.WriteString("![Version: {{ .Version }}](https://img.shields.io/badge/Version-{{ .Version }}-informational?style=flat-square)")
 	versionBuilder.WriteString("{{ end }}")
 
@@ -62,7 +62,7 @@ func getVersionTemplate() string {
 
 func getTypeTemplate() string {
 	typeBuilder := strings.Builder{}
-	typeBuilder.WriteString(`{{ define "chart.type" }}`)
+	typeBuilder.WriteString(`{{ define "chart.typeBadge" }}`)
 	typeBuilder.WriteString("{{ if .Type }}![Type: {{ .Type }}](https://img.shields.io/badge/Type-{{ .Type }}-informational?style=flat-square){{ end }}")
 	typeBuilder.WriteString("{{ end }}")
 
@@ -71,7 +71,7 @@ func getTypeTemplate() string {
 
 func getAppVersionTemplate() string {
 	appVersionBuilder := strings.Builder{}
-	appVersionBuilder.WriteString(`{{ define "chart.appVersion" }}`)
+	appVersionBuilder.WriteString(`{{ define "chart.appVersionBadge" }}`)
 	appVersionBuilder.WriteString("{{ if .AppVersion }}![AppVersion: {{ .AppVersion }}](https://img.shields.io/badge/AppVersion-{{ .AppVersion }}-informational?style=flat-square){{ end }}")
 	appVersionBuilder.WriteString("{{ end }}")
 
@@ -98,21 +98,21 @@ func getHomepageTemplate() string {
 
 func getMaintainerTemplate() string {
 	maintainerBuilder := strings.Builder{}
-	maintainerBuilder.WriteString(`{{ define "chart.maintainerHeader" }}## Maintainer{{ end }}`)
+	maintainerBuilder.WriteString(`{{ define "chart.maintainersHeader" }}## Maintainer{{ end }}`)
 
-	maintainerBuilder.WriteString(`{{ define "chart.maintainerTable" }}`)
-	maintainerBuilder.WriteString("| Maintainer | E-Mail | URL |\n")
-	maintainerBuilder.WriteString("| ---------- | ------ | --- |\n")
-	maintainerBuilder.WriteString("  {{- range .Maintainer }}")
+	maintainerBuilder.WriteString(`{{ define "chart.maintainersTable" }}`)
+	maintainerBuilder.WriteString("| Name | E-Mail | URL |\n")
+	maintainerBuilder.WriteString("| ---- | ------ | --- |\n")
+	maintainerBuilder.WriteString("  {{- range .Maintainers }}")
 	maintainerBuilder.WriteString("\n| {{ .Name }} | {{ .Email }} | {{ .Url }} |")
 	maintainerBuilder.WriteString("  {{- end }}")
 	maintainerBuilder.WriteString("{{ end }}")
 
-	maintainerBuilder.WriteString(`{{ define "chart.maintainer" }}`)
-	maintainerBuilder.WriteString("{{ if .Maintainer }}")
-	maintainerBuilder.WriteString(`{{ template "chart.maintainerHeader . }}`)
+	maintainerBuilder.WriteString(`{{ define "chart.maintainersSection" }}`)
+	maintainerBuilder.WriteString("{{ if .Maintainers }}")
+	maintainerBuilder.WriteString(`{{ template "chart.maintainersHeader . }}`)
 	maintainerBuilder.WriteString("\n\n")
-	maintainerBuilder.WriteString(`{{ template "chart.maintainerTable" . }}`)
+	maintainerBuilder.WriteString(`{{ template "chart.maintainersTable" . }}`)
 	maintainerBuilder.WriteString("{{ end }}")
 	maintainerBuilder.WriteString("{{ end }}")
 
@@ -121,15 +121,19 @@ func getMaintainerTemplate() string {
 
 func getSourceLinkTemplates() string {
 	sourceLinkBuilder := strings.Builder{}
-	sourceLinkBuilder.WriteString(`{{ define "chart.sourceHeader" }}## Source Code{{ end}}`)
+	sourceLinkBuilder.WriteString(`{{ define "chart.sourcesHeader" }}## Source Code{{ end}}`)
 
 	sourceLinkBuilder.WriteString(`{{ define "chart.sources" }}`)
-	sourceLinkBuilder.WriteString("{{ if .Sources }}")
-	sourceLinkBuilder.WriteString(`{{ template "chart.sourceHeader" . }}`)
-	sourceLinkBuilder.WriteString("\n\n")
 	sourceLinkBuilder.WriteString("  {{- range .Sources }}")
 	sourceLinkBuilder.WriteString("* <{{ . }}>\n")
 	sourceLinkBuilder.WriteString("  {{- end }}")
+	sourceLinkBuilder.WriteString("{{ end }}")
+
+	sourceLinkBuilder.WriteString(`{{ define "chart.sourcesSection" }}`)
+	sourceLinkBuilder.WriteString("{{ if .Sources }}")
+	sourceLinkBuilder.WriteString(`{{ template "chart.sourcesHeader" . }}`)
+	sourceLinkBuilder.WriteString("\n\n")
+	sourceLinkBuilder.WriteString(`{{ template "chart.sources" . }}`)
 	sourceLinkBuilder.WriteString("{{ end }}")
 	sourceLinkBuilder.WriteString("{{ end }}")
 
